@@ -15,6 +15,10 @@ builder.Services.Configure<KafkaOptions>(
 
 builder.Services.AddHttpClient<IOpenSkyClient, OpenSkyClient>();
 
+builder.Services.AddHostedService<FlightPollingService>();
+
+builder.Services.AddSingleton<IFlightProducer, KafkaFlightProducer>();
+
 var host = builder.Build();
 
 await host.RunAsync();
