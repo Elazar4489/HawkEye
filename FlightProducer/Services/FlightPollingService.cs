@@ -1,5 +1,7 @@
-﻿using FlightProducer.Configuration;
+﻿using System.Diagnostics;
+using FlightProducer.Configuration;
 using FlightProducer.Interfaces;
+using FlightProducer.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,20 +41,38 @@ public class FlightPollingService : BackgroundService
                     "Received {FlightCount} flights from OpenSky",
                     flights.Count);
 
+
+
+                const int batchSize = 500;
                 var sentCount = 0;
+                var stopwatch = Stopwatch.StartNew();
+                var failedCount = 0;
 
-                foreach (var flight in flights)
+                for (int i = 0; i < flights.Count; i += batchSize)
                 {
-                    await _flightProducer.ProduceAsync(
-                        flight,
-                        stoppingToken);
+                    var batch = flights
+                        .Skip(i)
+                        .Take(batchSize)
+                        .Select(flight =>
+                            TryProduceAsync(flight, stoppingToken))
+                        .ToArray();
 
-                    sentCount++;
+                    var results = await Task.WhenAll(batch);
+
+                    sentCount += results.Count(success => success);
+                    failedCount += results.Count(success => !success);
                 }
 
+                stopwatch.Stop();
+
                 _logger.LogInformation(
-                    "Successfully sent {SentCount} flights to Kafka",
-                    sentCount);
+                    "Kafka publishing completed. Sent: {SentCount}, Failed: {FailedCount}, Duration: {ElapsedSeconds:F2}s, Rate: {MessagesPerSecond:F0} messages/sec",
+                    sentCount,
+                    failedCount,
+                    stopwatch.Elapsed.TotalSeconds,
+                    stopwatch.Elapsed.TotalSeconds > 0
+                        ? sentCount / stopwatch.Elapsed.TotalSeconds
+                        : 0);
             }
             catch (OperationCanceledException)
                 when (stoppingToken.IsCancellationRequested)
@@ -77,6 +97,35 @@ public class FlightPollingService : BackgroundService
             {
                 break;
             }
+        }
+    }
+
+
+    private async Task<bool> TryProduceAsync(
+    FlightState flight,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _flightProducer.ProduceAsync(
+                flight,
+                cancellationToken);
+
+            return true;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to publish flight {Icao24}",
+                flight.Icao24);
+
+            return false;
         }
     }
 }

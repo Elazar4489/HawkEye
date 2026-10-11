@@ -1,10 +1,11 @@
 ﻿
-using System.Text.Json;
 using Confluent.Kafka;
 using FlightProducer.Configuration;
 using FlightProducer.Interfaces;
 using FlightProducer.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace FlightProducer.Services;
 
@@ -12,9 +13,11 @@ public class KafkaFlightProducer : IFlightProducer, IDisposable
 {
     private readonly IProducer<string, string> _producer;
     private readonly KafkaOptions _options;
-
-    public KafkaFlightProducer(IOptions<KafkaOptions> options)
+    private readonly ILogger<KafkaFlightProducer> _logger;
+    public KafkaFlightProducer(IOptions<KafkaOptions> options,
+        ILogger<KafkaFlightProducer> logger)
     {
+        _logger = logger;
         _options = options.Value;
 
         var config = new ProducerConfig
@@ -27,8 +30,8 @@ public class KafkaFlightProducer : IFlightProducer, IDisposable
     }
 
     public async Task ProduceAsync(
-        FlightState flight,
-        CancellationToken cancellationToken)
+    FlightState flight,
+    CancellationToken cancellationToken)
     {
         var message = new Message<string, string>
         {
@@ -36,10 +39,18 @@ public class KafkaFlightProducer : IFlightProducer, IDisposable
             Value = JsonSerializer.Serialize(flight)
         };
 
-        await _producer.ProduceAsync(
+        var result = await _producer.ProduceAsync(
             _options.Topic,
             message,
             cancellationToken);
+
+        _logger.LogDebug(
+                "Delivered flight {Icao24} to {Topic}, partition {Partition}, offset {Offset}",
+                    flight.Icao24,
+                    result.Topic,
+                    result.Partition,
+                    result.Offset);
+
     }
 
     public void Dispose()
