@@ -11,6 +11,8 @@ public sealed class FlightMatchingService
     private readonly KafkaFlightConsumer _consumer;
     private readonly KafkaMatchProducer _producer;
     private readonly MySqlFlightMatcher _matcher;
+    private readonly TimeSpan _cooldown;
+    private readonly Dictionary<(string Icao24, int UserId), DateTime> _lastNotifications = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -21,11 +23,13 @@ public sealed class FlightMatchingService
     public FlightMatchingService(
         KafkaFlightConsumer consumer,
         KafkaMatchProducer producer,
-        MySqlFlightMatcher matcher)
+        MySqlFlightMatcher matcher,
+        TimeSpan cooldown)
     {
         _consumer = consumer;
         _producer = producer;
         _matcher = matcher;
+        _cooldown = cooldown;
     }
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -77,6 +81,19 @@ public sealed class FlightMatchingService
 
             foreach (var userId in userIds)
             {
+                var key = (flight.Icao24, userId);
+                var now = DateTime.UtcNow;
+
+                if (_lastNotifications.TryGetValue(key, out var lastSent) &&
+                    now - lastSent < _cooldown)
+                {
+                    Console.WriteLine(
+                        $"Skipping notification for {flight.Icao24}, " +
+                        $"user {userId}: cooldown active.");
+
+                    continue;
+                }
+
                 var message = new FlightMatchMessage
                 {
                     UserId = userId,
@@ -84,12 +101,12 @@ public sealed class FlightMatchingService
                     Callsign = flight.Callsign,
                     Longitude = flight.Longitude.Value,
                     Latitude = flight.Latitude.Value,
-                    MatchedAtUtc = DateTime.UtcNow
+                    MatchedAtUtc = now
                 };
 
-                await _producer.ProduceAsync(
-                    message,
-                    cancellationToken);
+                await _producer.ProduceAsync(message, cancellationToken);
+
+                _lastNotifications[key] = now;
             }
 
             _consumer.Commit(result);
