@@ -9,6 +9,7 @@ namespace FlightTracking.Api.Settings
 
         public DbSet<User> Users { get; set; }
         public DbSet<CustomerPriority> CustomerPriorities { get; set; }
+        public DbSet<UserConnection> UserConnections { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -18,6 +19,11 @@ namespace FlightTracking.Api.Settings
                 .HasOne(cp => cp.User)
                 .WithMany(u => u.CustomerPriorities)
                 .HasForeignKey(cp => cp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserConnection>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(uc => uc.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

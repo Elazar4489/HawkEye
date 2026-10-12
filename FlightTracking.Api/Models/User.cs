@@ -27,8 +27,12 @@ namespace FlightTracking.Api.Models
         public string Email { get; set; } = string.Empty;
 
         [MaxLength(20)]
-        [Column("fone")]
+        [Column("phone")]
         public string? Fone { get; set; }
+
+        [MaxLength(500)]
+        [Column("push_token")]
+        public string? PushToken { get; set; }
         public ICollection<CustomerPriority> CustomerPriorities { get; set; } = new List<CustomerPriority>();
     }
 }
