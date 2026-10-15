@@ -1,5 +1,7 @@
 <Solution>
   <Project Path="FlightDashboardApi/FlightDashboardApi.csproj" />
+  <Project Path="FlightMatching/FlightMatching.csproj" />
+  <Project Path="FlightProducer/FlightProducer.csproj" />
   <Project Path="FlightTracking.Api/FlightTracking.Api.csproj" />
   <Project Path="FlightTracking.NotificationWorker/FlightTracking.NotificationWorker.csproj" />
 </Solution>

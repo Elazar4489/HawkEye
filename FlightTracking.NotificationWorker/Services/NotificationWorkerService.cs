@@ -28,6 +28,9 @@ namespace FlightTracking.NotificationWorker
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Consume() is blocking; yield first so the host finishes starting.
+            await Task.Yield();
+
             _logger.LogInformation("NotificationWorkerService is starting, listening to topic: {Topic}", _kafkaSettings.Topic);
 
             _consumer.Subscribe(_kafkaSettings.Topic);
@@ -53,12 +56,17 @@ namespace FlightTracking.NotificationWorker
                     catch (ConsumeException ex)
                     {
                         _logger.LogError(ex, "Error occurred while consuming message from Kafka.");
+                        await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
                     }
                 }
             }
             catch (OperationCanceledException)
             {
 
+            }
+            finally
+            {
+                _consumer.Close();
             }
         }
     }

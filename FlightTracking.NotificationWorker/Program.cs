@@ -18,6 +18,8 @@ Log.Logger = new LoggerConfiguration()
 builder.Services.AddSerilog();
 
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("KafkaSettings"));
+builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+builder.Services.Configure<FirebaseSettings>(builder.Configuration.GetSection("Firebase"));
 
 //builder.Services.AddDbContext<NotificationDbContext>(options =>
 //{

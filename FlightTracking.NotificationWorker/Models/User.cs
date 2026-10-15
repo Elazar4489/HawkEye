@@ -33,7 +33,6 @@ namespace FlightTracking.NotificationWorker.Models
         [MaxLength(500)]
         [Column("push_token")]
         public string? PushToken { get; set; }
-        public UserConnection? UserConnection { get; set; }
         public ICollection<CustomerPriority> CustomerPriorities { get; set; } = new List<CustomerPriority>();
     }
 }

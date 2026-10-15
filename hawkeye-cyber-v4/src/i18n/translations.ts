@@ -1,0 +1,172 @@
+export const translations = {
+  he: {
+    // General & Nav
+    appName: "HawkEye",
+    tagline: "מערכת ניטור טיסות והתראות בזמן אמת",
+    navMap: "מפת מעקב בלייב",
+    navZones: "הגדרת אזורי עניין",
+    navAlerts: "מרכז התראות",
+    navAnalytics: "דוחות ואנליטיקה",
+    navAdmin: "פאנל אדמין",
+    navSettings: "הגדרות תשתיות",
+    logout: "התנתק",
+    login: "התחברות",
+    register: "הרשמה",
+    enterSystem: "כניסה למערכת HawkEye",
+    switchLanguage: "English",
+    mapDarkTheme: "מפה כהה (Cyber)",
+    mapLightTheme: "מפה בהירה / לוויין",
+    protocolHttps: "חיבור מאובטח (HTTPS)",
+    protocolHttp: "חיבור רגיל (HTTP)",
+    liveConnected: "מחובר בזמן אמת (SignalR)",
+    liveDisconnected: "מנותק (SignalR)",
+    
+    // Splash Screen
+    splashTitle: "מערכת ניטור תעופה אסטרטגית בזמן אמת",
+    splashSubtitle: "עיבוד אסינכרוני מבוזר, סינון מרחבי Spatial SQL והתראות מיידיות מבוססות אירועים",
+    splashFeature1Title: "הזרמת נתונים בלייב",
+    splashFeature1Desc: "קליטת כלי טיס מ-OpenSky באמצעות Kafka Event Streaming במרווחי זמן של שניות",
+    splashFeature2Title: "סינון מרחבי Spatial SQL",
+    splashFeature2Desc: "חישוב רדיוסים ופוליגונים מורכבים בזמן אמת במנוע MySQL NetTopologySuite",
+    splashFeature3Title: "התראות קריטיות מיידיות",
+    splashFeature3Desc: "שליחת Push דרך FCM ואירועי SignalR WebSocket עם מנגנון צינון מבוקר (Cooldown)",
+    splashCTA: "לחץ לכניסה והזדהות למערכת",
+
+    // Auth Screen
+    authTitle: "הזדהות וכניסה למערכת",
+    authSubtitle: "התחבר או הירשם כדי לקבל גישה למפת הניטור והגדרת התראות מותאמות אישית",
+    emailLabel: "כתובת אימייל",
+    passwordLabel: "סיסמה",
+    usernameLabel: "שם משתמש",
+    phoneLabel: "מספר טלפון",
+    rememberMe: "זכור אותי במכשיר זה",
+    noAccount: "עדיין אין לך חשבון?",
+    hasAccount: "רשום כבר במערכת?",
+    registerNow: "הירשם עכשיו",
+    loginNow: "התחבר לחשבון",
+    pushPermissionPrompt: "אישור לקבלת התראות Push בדפדפן",
+    pushPermissionSuccess: "התראות Push מופעלות בהצלחה (FCM Active)",
+    pushPermissionButton: "אשר התראות דפדפן",
+    authError: "שם משתמש או סיסמה שגויים, או שהמשתמש אינו קיים במסד הנתונים",
+
+    // Live Map
+    searchPlaceholder: "חפש מטוס לפי Callsign / ICAO / מדינה...",
+    altitude: "גובה",
+    velocity: "מהירות",
+    heading: "כיוון",
+    country: "מדינת רישום",
+    squawk: "Squawk Code",
+    trackAircraft: "התמקד במטוס",
+    addAlertZone: "צור אזור התראה מסביב",
+
+    // Priority Zones
+    zonesTitle: "ניהול אזורי עניין וסינון מרחבי (Spatial SQL)",
+    createRadiusZone: "+ צור אזור רדיוס",
+    createPolygonZone: "+ צור אזור פוליגון מורכב",
+    zoneNameLabel: "שם האזור",
+    radiusLabel: "רדיוס (במטרים)",
+    priorityLabel: "רמת דחיפות",
+    saveZone: "שמור אזור ב-MySQL",
+    activeZonesList: "אזורים מוגדרים במערכת",
+
+    // Alerts
+    alertsTitle: "מרכז התראות והיסטוריית חציות",
+    filterSeverity: "סינון לפי חומרה",
+    allSeverities: "כל הרמות",
+    exportHistory: "ייצוא היסטוריה (CSV)",
+
+    // Analytics & Admin
+    analyticsTitle: "דאשבורד ניתוח נתונים ותחקור היסטורי (MongoDB)",
+    totalToday: 'סה"כ טיסות יומיומיות',
+    totalAlertsToday: 'סה"כ התראות שנשלחו',
+    topZone: 'אזור פעיל ביותר',
+    adminTitle: 'פאנל מנהל מערכת וניטור תשתיות Backend',
+    userManagement: 'ניהול משתמשים והרשאות',
+    infrastructureStatus: 'סטטוס תקינות תשתיות'
+  },
+  en: {
+    // General & Nav
+    appName: "HawkEye",
+    tagline: "Real-Time Flight Tracking & Alerts System",
+    navMap: "Live Tracking Map",
+    navZones: "Priority Zones",
+    navAlerts: "Alerts Center",
+    navAnalytics: "Analytics & Reports",
+    navAdmin: "Admin Console",
+    navSettings: "Backend Config",
+    logout: "Logout",
+    login: "Login",
+    register: "Register",
+    enterSystem: "Enter HawkEye System",
+    switchLanguage: "עברית",
+    mapDarkTheme: "Dark Map (Cyber)",
+    mapLightTheme: "Light / Satellite Map",
+    protocolHttps: "Secure Connection (HTTPS)",
+    protocolHttp: "Standard Connection (HTTP)",
+    liveConnected: "Live Connected (SignalR)",
+    liveDisconnected: "Disconnected (SignalR)",
+
+    // Splash Screen
+    splashTitle: "Strategic Real-Time Aviation Monitoring Platform",
+    splashSubtitle: "Event-driven asynchronous streaming, Spatial SQL filtering, and instant alerting",
+    splashFeature1Title: "Live Data Streaming",
+    splashFeature1Desc: "Continuous flight feeds from OpenSky via Kafka Event Broker at sub-second speeds",
+    splashFeature2Title: "Spatial SQL Engine",
+    splashFeature2Desc: "Real-time geographic radius and complex polygon matching in MySQL NetTopologySuite",
+    splashFeature3Title: "Instant Critical Alerts",
+    splashFeature3Desc: "FCM Push notifications and SignalR WebSockets with intelligent cooldown protection",
+    splashCTA: "Click to Enter System Authentication",
+
+    // Auth Screen
+    authTitle: "System Authentication & Access Control",
+    authSubtitle: "Sign in or register to access the live tracking map and custom spatial alerts",
+    emailLabel: "Email Address",
+    passwordLabel: "Password",
+    usernameLabel: "Username",
+    phoneLabel: "Phone Number",
+    rememberMe: "Remember me on this device",
+    noAccount: "Don't have an account?",
+    hasAccount: "Already registered?",
+    registerNow: "Register Now",
+    loginNow: "Log In",
+    pushPermissionPrompt: "Enable Browser Push Notifications",
+    pushPermissionSuccess: "Push Notifications Active (FCM)",
+    pushPermissionButton: "Enable Browser Notifications",
+    authError: "Invalid credentials or user not found in database",
+
+    // Live Map
+    searchPlaceholder: "Search flight by Callsign / ICAO / Country...",
+    altitude: "Altitude",
+    velocity: "Speed",
+    heading: "Heading",
+    country: "Country",
+    squawk: "Squawk Code",
+    trackAircraft: "Focus Aircraft",
+    addAlertZone: "Create Zone Around",
+
+    // Priority Zones
+    zonesTitle: "Priority Spatial Zones Management (Spatial SQL)",
+    createRadiusZone: "+ Add Radius Zone",
+    createPolygonZone: "+ Add Complex Polygon",
+    zoneNameLabel: "Zone Name",
+    radiusLabel: "Radius (Meters)",
+    priorityLabel: "Priority Level",
+    saveZone: "Save Zone to MySQL",
+    activeZonesList: "Configured Active Zones",
+
+    // Alerts
+    alertsTitle: "Alerts Center & Boundary Crossing History",
+    filterSeverity: "Filter by Severity",
+    allSeverities: "All Levels",
+    exportHistory: "Export History (CSV)",
+
+    // Analytics & Admin
+    analyticsTitle: "Analytics & Historical Query Dashboard (MongoDB)",
+    totalToday: "Total Flights Today",
+    totalAlertsToday: "Total Alerts Dispatched",
+    topZone: "Top Active Zone",
+    adminTitle: "Admin Control Panel & Backend Infrastructure",
+    userManagement: "User Management & Roles",
+    infrastructureStatus: "Infrastructure Health"
+  }
+};

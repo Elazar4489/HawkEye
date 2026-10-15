@@ -1,0 +1,12 @@
+# Keep local build output and IDE files out of the image (COPY . .)
+**/bin/
+**/obj/
+**/out/
+**/Logs/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+Dockerfile
+.dockerignore

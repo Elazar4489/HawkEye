@@ -12,12 +12,17 @@ builder.Services.Configure<OpenSkyOptions>(
 builder.Services.Configure<KafkaOptions>(
     builder.Configuration.GetSection("Kafka"));
 
+builder.Services.Configure<MongoOptions>(
+    builder.Configuration.GetSection("Mongo"));
+
 
 builder.Services.AddHttpClient<IOpenSkyClient, OpenSkyClient>();
 
 builder.Services.AddHostedService<FlightPollingService>();
 
 builder.Services.AddSingleton<IFlightProducer, KafkaFlightProducer>();
+
+builder.Services.AddSingleton<IFlightStore, MongoFlightStore>();
 
 var host = builder.Build();
 

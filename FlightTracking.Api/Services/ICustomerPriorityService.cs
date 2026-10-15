@@ -8,5 +8,7 @@ namespace FlightTracking.Api.Services
         Task<CustomerPriorityResponseDto> CreatePriorityAsync(CreateCustomerPriorityDto dto);
         Task<bool> UpdatePriorityAsync(int id, UpdateCustomerPriorityDto dto);
         Task<bool> DeletePriorityAsync(int id);
+        Task<CustomerPriorityResponseDto?> GetPriorityAsync(int id);
+        Task<IEnumerable<CustomerPriorityResponseDto>> GetAllPrioritiesAsync();
     }
 }

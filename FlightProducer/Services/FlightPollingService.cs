@@ -12,17 +12,20 @@ public class FlightPollingService : BackgroundService
 {
     private readonly IOpenSkyClient _openSkyClient;
     private readonly IFlightProducer _flightProducer;
+    private readonly IFlightStore _flightStore;
     private readonly ILogger<FlightPollingService> _logger;
     private readonly OpenSkyOptions _options;
 
     public FlightPollingService(
         IOpenSkyClient openSkyClient,
         IFlightProducer flightProducer,
+        IFlightStore flightStore,
         ILogger<FlightPollingService> logger,
         IOptions<OpenSkyOptions> options)
     {
         _openSkyClient = openSkyClient;
         _flightProducer = flightProducer;
+        _flightStore = flightStore;
         _logger = logger;
         _options = options.Value;
     }
@@ -41,7 +44,19 @@ public class FlightPollingService : BackgroundService
                     "Received {FlightCount} flights from OpenSky",
                     flights.Count);
 
-
+                // Raw data goes to MongoDB (dashboards / live map); a Mongo failure
+                // must not stop the Kafka stream that drives the alerts.
+                try
+                {
+                    await _flightStore.SaveSnapshotAsync(
+                        flights,
+                        DateTime.UtcNow,
+                        stoppingToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogError(ex, "Failed to save flight snapshot to MongoDB");
+                }
 
                 const int batchSize = 500;
                 var sentCount = 0;

@@ -1,0 +1,314 @@
+# HawkEye - full stack in one command:  docker compose up --build -d
+# Frontend:  http://localhost:3000  (or http://<LAN-IP>:3000)
+# Kibana:    http://localhost:5601
+#
+# Secrets fall back to the defaults below; override them in .env.
+
+name: hawkeye
+
+networks:
+  hawkeye_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  mongo_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
+  elastic_data:
+
+x-dotnet-logging: &elastic-logging
+  Serilog__WriteTo__1__Args__nodeUris: http://elasticsearch:9200
+
+services:
+  # ---------------------------------------------------------------- infrastructure
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: flight_tracking_db
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [hawkeye_network]
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongo123}
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [hawkeye_network]
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [hawkeye_network]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      # 29092 is for clients running on the host (dotnet run); containers use kafka:9092
+      - "127.0.0.1:29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  # Creates the topics up front so consumers never subscribe to a missing topic.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka_init
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for topic in flights flight-alerts; do
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic "$$topic" --partitions 3 --replication-factor 1
+        done
+        kafka-topics --bootstrap-server kafka:9092 --list
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    networks: [hawkeye_network]
+
+  kibana:
+    image: kibana:8.11.0
+    container_name: kibana
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  # ---------------------------------------------------------------- backend
+  flight-tracking-api:
+    build:
+      context: ./FlightTracking.Api
+    container_name: flight_tracking_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5001:5000"
+    environment:
+      <<: *elastic-logging
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=flight_tracking_db;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD:-root};
+      MongoSettings__ConnectionString: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-mongo123}@mongodb:27017
+      MongoSettings__DatabaseName: flight_tracking_db
+      Kafka__BootstrapServers: kafka:9092
+      Jwt__Key: ${JWT_KEY:-HawkEye-Development-Signing-Key-Change-Me-0123456789}
+      Internal__ApiKey: ${INTERNAL_API_KEY:-hawkeye-internal-key}
+      Seed__AdminEmail: ${ADMIN_EMAIL:-emma298450@gmail.com}
+      Seed__AdminPassword: ${ADMIN_PASSWORD:-Admin123!}
+    healthcheck:
+      # The port only opens after EF migrations finished, so "healthy" == schema ready.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5000' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  flight-producer:
+    build:
+      context: ./FlightProducer
+    container_name: flight_producer
+    restart: unless-stopped
+    environment:
+      OpenSky__BaseUrl: https://opensky-network.org
+      # Anonymous OpenSky access is heavily rate limited; set credentials in .env for more calls.
+      OpenSky__PollingIntervalSeconds: ${OPENSKY_POLLING_SECONDS:-90}
+      OpenSky__ClientId: ${OPENSKY_CLIENT_ID:-}
+      OpenSky__ClientSecret: ${OPENSKY_CLIENT_SECRET:-}
+      Kafka__BootstrapServers: kafka:9092
+      Kafka__Topic: flights
+      Mongo__ConnectionString: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-mongo123}@mongodb:27017
+      Mongo__DatabaseName: flight_tracking_db
+      Mongo__CollectionName: flights
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  flight-matching:
+    build:
+      context: ./FlightMatching
+    container_name: flight_matching
+    restart: unless-stopped
+    environment:
+      Kafka__BootstrapServers: kafka:9092
+      Kafka__InputTopic: flights
+      Kafka__OutputTopic: flight-alerts
+      Kafka__GroupId: flight-matching-group
+      Database__ConnectionString: Server=mysql;Port=3306;Database=flight_tracking_db;User ID=root;Password=${MYSQL_ROOT_PASSWORD:-root};
+      Matching__CooldownMinutes: 10
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+      flight-tracking-api:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  flight-notification-worker:
+    build:
+      context: ./FlightTracking.NotificationWorker
+    container_name: flight_notification_worker
+    restart: unless-stopped
+    environment:
+      <<: *elastic-logging
+      ApiSettings__BaseUrl: http://flight-tracking-api:5000
+      ApiSettings__InternalApiKey: ${INTERNAL_API_KEY:-hawkeye-internal-key}
+      KafkaSettings__BootstrapServers: kafka:9092
+      KafkaSettings__GroupId: notification-worker-group
+      KafkaSettings__Topic: flight-alerts
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=flight_tracking_db;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD:-root};
+      # Optional FCM push: put the Firebase service-account JSON in ./secrets and set
+      # FIREBASE_CREDENTIALS_PATH=/app/secrets/<file>.json in .env
+      Firebase__CredentialsPath: ${FIREBASE_CREDENTIALS_PATH:-}
+    volumes:
+      - ./secrets:/app/secrets:ro
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      flight-tracking-api:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  flight-dashboard-api:
+    build:
+      context: ./FlightDashboardApi
+    container_name: flight_dashboard_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5002:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MongoSettings__ConnectionString: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-mongo123}@mongodb:27017
+      MongoSettings__DatabaseName: flight_tracking_db
+      ElasticSettings__Uri: http://elasticsearch:9200
+      ElasticSettings__IndexName: dashboards-index
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5000' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks: [hawkeye_network]
+
+  # ---------------------------------------------------------------- frontend
+  # nginx serves the React build and reverse-proxies /api, /notificationHub and
+  # /dashboard to the backends, so the browser only talks to one origin (works on LAN too).
+  frontend:
+    build:
+      context: ./hawkeye-cyber-v4
+    container_name: hawkeye_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      flight-tracking-api:
+        condition: service_healthy
+      flight-dashboard-api:
+        condition: service_healthy
+    networks: [hawkeye_network]

@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using FlightTracking.Api.DTOs;
+using FlightTracking.Api.Models;
 using FlightTracking.Api.Services;
 
 namespace FlightTracking.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -16,6 +19,7 @@ namespace FlightTracking.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = UserRoles.Admin)]
         public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
@@ -25,6 +29,8 @@ namespace FlightTracking.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<UserResponseDto>> GetUserById(int id)
         {
+            if (!User.CanAccessUser(id)) return Forbid();
+
             var user = await _userService.GetUserByIdAsync(id);
             if (user == null)
             {
@@ -33,12 +39,14 @@ namespace FlightTracking.Api.Controllers
             return Ok(user);
         }
 
+        // Admin creates a user directly; self sign-up goes through /api/auth/register.
         [HttpPost]
+        [Authorize(Roles = UserRoles.Admin)]
         public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] CreateUserDto createUserDto)
         {
-            if (!ModelState.IsValid)
+            if (await _userService.EmailExistsAsync(createUserDto.Email))
             {
-                return BadRequest(ModelState);
+                return Conflict(new { message = "A user with this email already exists." });
             }
 
             var createdUser = await _userService.CreateUserAsync(createUserDto);
@@ -47,10 +55,7 @@ namespace FlightTracking.Api.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!User.CanAccessUser(id)) return Forbid();
 
             var updated = await _userService.UpdateUserAsync(id, updateUserDto);
             if (!updated)
@@ -61,7 +66,26 @@ namespace FlightTracking.Api.Controllers
             return NoContent();
         }
 
+        // Stores the FCM registration token of the browser/device of this user.
+        [HttpPut("{id:int}/push-token")]
+        public async Task<IActionResult> UpdatePushToken(int id, [FromBody] UpdatePushTokenDto dto)
+        {
+            if (!User.CanAccessUser(id)) return Forbid();
+
+            var updated = await _userService.UpdatePushTokenAsync(id, dto.PushToken);
+            return updated ? NoContent() : NotFound(new { message = $"User with ID {id} not found." });
+        }
+
+        [HttpPut("{id:int}/role")]
+        [Authorize(Roles = UserRoles.Admin)]
+        public async Task<IActionResult> UpdateRole(int id, [FromBody] UpdateUserRoleDto dto)
+        {
+            var updated = await _userService.UpdateRoleAsync(id, dto.Role);
+            return updated ? NoContent() : NotFound(new { message = $"User with ID {id} not found." });
+        }
+
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = UserRoles.Admin)]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var deleted = await _userService.DeleteUserAsync(id);

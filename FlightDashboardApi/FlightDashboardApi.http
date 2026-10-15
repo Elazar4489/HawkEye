@@ -1,6 +1,19 @@
-@FlightDashboardApi_HostAddress = http://localhost:5006
+@FlightDashboardApi_HostAddress = http://localhost:5002
 
-GET {{FlightDashboardApi_HostAddress}}/weatherforecast/
+POST {{FlightDashboardApi_HostAddress}}/api/dashboard/generate
+Content-Type: application/json
+
+{
+  "dashboardName": "Israel airspace",
+  "minLatitude": 29,
+  "maxLatitude": 34,
+  "minLongitude": 33,
+  "maxLongitude": 37
+}
+
+###
+
+GET {{FlightDashboardApi_HostAddress}}/api/dashboard/{id}
 Accept: application/json
 
 ###

@@ -28,6 +28,7 @@ namespace FlightTracking.Api.Services
             var entity = new CustomerPriority
             {
                 UserId = dto.UserId,
+                Name = dto.Name,
                 Priority = dto.Priority,
                 AreaType = dto.AreaType.ToUpper(),
                 RadiusMeters = dto.RadiusMeters
@@ -61,6 +62,7 @@ namespace FlightTracking.Api.Services
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) return false;
 
+            entity.Name = dto.Name;
             entity.Priority = dto.Priority;
             entity.AreaType = dto.AreaType.ToUpper();
             entity.RadiusMeters = dto.RadiusMeters;
@@ -86,7 +88,51 @@ namespace FlightTracking.Api.Services
             }
 
             // ה-Repository כבר מנהל את ה-Update של ה-Entity, נשאר רק לשמור שינויים
-            return await _repository.SaveChangesAsync();
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<CustomerPriorityResponseDto?> GetPriorityAsync(int id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            return entity == null ? null : MapToDto(entity);
+        }
+
+        public async Task<IEnumerable<CustomerPriorityResponseDto>> GetAllPrioritiesAsync()
+        {
+            var priorities = await _repository.GetAllAsync();
+            return priorities.Select(MapToDto);
+        }
+
+        // Returns an error message, or null when the area definition is valid.
+        public static string? Validate(
+            string areaType,
+            double? centerLongitude,
+            double? centerLatitude,
+            decimal? radiusMeters,
+            List<CoordinateDto>? polygon)
+        {
+            switch (areaType.ToUpper())
+            {
+                case "RADIUS":
+                    if (centerLongitude is null || centerLatitude is null)
+                        return "RADIUS area requires CenterLongitude and CenterLatitude.";
+                    if (centerLatitude is < -90 or > 90 || centerLongitude is < -180 or > 180)
+                        return "Center coordinates are out of range.";
+                    if (radiusMeters is null or <= 0)
+                        return "RADIUS area requires a positive RadiusMeters.";
+                    return null;
+
+                case "POLYGON":
+                    if (polygon == null || polygon.Count < 3)
+                        return "POLYGON area requires at least 3 coordinates.";
+                    if (polygon.Any(c => c.Latitude is < -90 or > 90 || c.Longitude is < -180 or > 180))
+                        return "Polygon coordinates are out of range.";
+                    return null;
+
+                default:
+                    return "AreaType must be RADIUS or POLYGON.";
+            }
         }
 
         public async Task<bool> DeletePriorityAsync(int id)
@@ -105,6 +151,7 @@ namespace FlightTracking.Api.Services
             {
                 Id = entity.Id,
                 UserId = entity.UserId,
+                Name = entity.Name,
                 Priority = entity.Priority,
                 AreaType = entity.AreaType,
                 RadiusMeters = entity.RadiusMeters

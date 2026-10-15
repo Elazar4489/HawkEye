@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build outputs & temporary files
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker files
+**/docker-compose*.yml
+**/Dockerfile*
+
+# Logs & Markdown
+**/*.log
+**/*.md
+**/scratch/

@@ -30,4 +30,9 @@
     <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Needed at runtime inside the container (dotnet publish only copies it when asked) -->
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 using FlightDashboardApi.Services;
+using FlightDashboardApi;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using MongoDB.Driver;
 using Serilog;
@@ -39,8 +40,29 @@ builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 });
 
 builder.Services.AddScoped<FlightDashboardService>();
+// 1. הגדרת פוליסת CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        // Reached through the nginx proxy in Docker; any origin is allowed for direct
+        // calls from the vite dev server or another machine on the LAN.
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // קריטי עבור SignalR!
+    });
+});
 
+// ...
+builder.Services.AddSignalR();
 var app = builder.Build();
+
+// 2. הפעלת ה-CORS בשרשרת ה-Middleware (לפני Routing/Authorization)
+app.UseCors("AllowReactApp");
+
+// 3. מיפוי ה-SignalR Hub
+app.MapHub<NotificationHub>("/notificationHub");
 
 try
 {
@@ -65,9 +87,10 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseHttpsRedirection();
-
+    // HTTP only: TLS (if any) is terminated in front of the container.
     app.UseAuthorization();
+
+    app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
     app.MapControllers();
 

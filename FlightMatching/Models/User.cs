@@ -27,7 +27,7 @@ public class User
     public string Email { get; set; } = string.Empty;
 
     [MaxLength(20)]
-    [Column("fone")]
+    [Column("phone")]
     public string? Fone { get; set; }
 
     public ICollection<CustomerPriority> CustomerPriorities { get; set; }

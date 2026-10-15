@@ -33,6 +33,18 @@ namespace FlightTracking.Api.Models
         [MaxLength(500)]
         [Column("push_token")]
         public string? PushToken { get; set; }
+
+        // "Admin" or "Operator"
+        [Required]
+        [MaxLength(20)]
+        [Column("role")]
+        public string Role { get; set; } = UserRoles.Operator;
         public ICollection<CustomerPriority> CustomerPriorities { get; set; } = new List<CustomerPriority>();
+    }
+
+    public static class UserRoles
+    {
+        public const string Admin = "Admin";
+        public const string Operator = "Operator";
     }
 }

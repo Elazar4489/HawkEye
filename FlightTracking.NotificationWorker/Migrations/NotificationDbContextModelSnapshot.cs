@@ -76,18 +76,47 @@ namespace FlightTracking.NotificationWorker.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<double?>("BaroAltitude")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Callsign")
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Icao24")
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ZoneName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
@@ -161,15 +190,9 @@ namespace FlightTracking.NotificationWorker.Migrations
                         .HasColumnType("int")
                         .HasColumnName("user_id");
 
-                    b.Property<int?>("UserUzerId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserUzerId")
-                        .IsUnique();
 
                     b.ToTable("UserConnections", null, t =>
                         {
@@ -206,17 +229,11 @@ namespace FlightTracking.NotificationWorker.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("FlightTracking.NotificationWorker.Models.User", null)
-                        .WithOne("UserConnection")
-                        .HasForeignKey("FlightTracking.NotificationWorker.Models.UserConnection", "UserUzerId");
                 });
 
             modelBuilder.Entity("FlightTracking.NotificationWorker.Models.User", b =>
                 {
                     b.Navigation("CustomerPriorities");
-
-                    b.Navigation("UserConnection");
                 });
 #pragma warning restore 612, 618
         }

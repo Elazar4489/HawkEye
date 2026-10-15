@@ -17,6 +17,10 @@ public class CustomerPriority
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 
+    [MaxLength(100)]
+    [Column("Name")]
+    public string? Name { get; set; }
+
     [Column("Priority")]
     public int Priority { get; set; }
 
