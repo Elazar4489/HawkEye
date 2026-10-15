@@ -1,0 +1,176 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore": "Warning",
+        "System": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "Logs/flight-dashboard-log-.txt",
+          "rollingInterval": "Day",
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      }
+    ]
+  },
+  "AllowedHosts": "*",
+  "MongoSettings": {
+    "ConnectionString": "mongodb://admin:mongo123@localhost:27017",
+    "DatabaseName": "flight_tracking_db"
+  },
+  "ElasticSettings": {
+    "Uri": "http://localhost:9200",
+    "IndexName": "dashboards-index"
+  }
+}
+
+
+
+
+{
+  "Kafka": {
+    "BootstrapServers": "localhost:9092",
+    "InputTopic": "flights",
+    "OutputTopic": "flight-matches",
+    "GroupId": "flight-matching-group"
+  },
+  "Database": {
+    "ConnectionString": "Server=localhost;Port=3306;Database=flight_tracking_db;User ID=root;Password=root;"
+  },
+
+  "Matching": {
+    "CooldownMinutes": 10
+  }
+}
+
+
+
+{
+  "OpenSky": {
+    "BaseUrl": "https://opensky-network.org",
+    "PollingIntervalSeconds": 200000
+  },
+  "Kafka": {
+    "BootstrapServers": "localhost:9092",
+    "Topic": "flights"
+  }
+}
+
+
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Port=3306;Database=flight_tracking_db;Uid=root;Pwd=root;"
+  },
+  "MongoSettings": {
+    "ConnectionString": "mongodb://localhost:27017",
+    "DatabaseName": "flight_tracking_db"
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore.Hosting": "Warning",
+        "Microsoft.AspNetCore.Routing": "Warning",
+        "Microsoft.EntityFrameworkCore": "Information"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "Elasticsearch",
+        "Args": {
+          "nodeUris": "http://localhost:9200",
+          "indexFormat": "flight-tracking-logs-{0:yyyy.MM.dd}",
+          "autoRegisterTemplate": true
+        }
+      }
+    ]
+  }
+}
+
+
+
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "ApiSettings": {
+    "BaseUrl": "https://localhost:5000"
+  },
+  "KafkaSettings": {
+    "BootstrapServers": "localhost:9092",
+    "GroupId": "notification-worker-group",
+    "Topic": "flight-alerts"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Port=3306;Database=flight_tracking_db;Uid=root;Pwd=root;"
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "Elasticsearch",
+        "Args": {
+          "nodeUris": "http://localhost:9200",
+          "indexFormat": "flight-tracking-notification-logs-{0:yyyy.MM.dd}",
+          "autoRegisterTemplate": true
+        }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+  },
+  "AllowedHosts": "*"
+}
+
+
+
+
+
+# MySQL
+MYSQL_ROOT_PASSWORD=root
+MYSQL_DATABASE=flight_tracking_db
+MYSQL_USER=root
+MYSQL_PASSWORD=root
+
+# MongoDB
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=mongo123
+
+

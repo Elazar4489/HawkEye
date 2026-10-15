@@ -1,4 +1,6 @@
-﻿namespace FlightTracking.Api.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace FlightTracking.Api.DTOs
 {
     // DTO לקבלת נקודה בודדת (קו אורך וקו רוחב)
     public class CoordinateDto
@@ -11,7 +13,14 @@
     public class CreateCustomerPriorityDto
     {
         public int UserId { get; set; }
-        public int Priority { get; set; }
+
+        [MaxLength(100)]
+        public string? Name { get; set; }
+
+        [Range(1, 3)] // 1 = High, 2 = Medium, 3 = Low
+        public int Priority { get; set; } = 1;
+
+        [Required]
         public string AreaType { get; set; } = string.Empty; // "RADIUS" או "POLYGON"
 
         // רלוונטי רק לרדיוס
@@ -28,6 +37,7 @@
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public string? Name { get; set; }
         public int Priority { get; set; }
         public string AreaType { get; set; } = string.Empty;
         public decimal? RadiusMeters { get; set; }
@@ -37,7 +47,13 @@
     }
     public class UpdateCustomerPriorityDto
     {
-        public int Priority { get; set; }
+        [MaxLength(100)]
+        public string? Name { get; set; }
+
+        [Range(1, 3)]
+        public int Priority { get; set; } = 1;
+
+        [Required]
         public string AreaType { get; set; } = string.Empty; // "RADIUS" או "POLYGON"
 
         // רלוונטי רק לרדיוס

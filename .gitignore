@@ -5,3 +5,14 @@ bin/
 obj/
 
 .env
+
+# Firebase / other local secrets
+secrets/*
+!secrets/README.txt
+
+# Frontend
+node_modules/
+dist/
+
+# Runtime logs
+**/Logs/

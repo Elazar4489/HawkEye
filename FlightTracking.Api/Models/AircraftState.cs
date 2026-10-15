@@ -3,6 +3,8 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace FlightTracking.Api.Models
 {
+    // Written by FlightProducer to the "flights" collection (one document per aircraft per poll).
+    [BsonIgnoreExtraElements]
     public class AircraftStateDocument
     {
         [BsonId]

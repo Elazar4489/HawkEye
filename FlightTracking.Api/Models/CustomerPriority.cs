@@ -17,6 +17,11 @@ namespace FlightTracking.Api.Models
         [ForeignKey("UserId")]
         public User? User { get; set; }
 
+        [MaxLength(100)]
+        [Column("Name")]
+        public string? Name { get; set; }
+
+        // 1 = High, 2 = Medium, 3 = Low
         [Column("Priority")]
         public int Priority { get; set; }
 

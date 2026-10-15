@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using NetTopologySuite.Geometries;
 
@@ -7,7 +8,7 @@ using NetTopologySuite.Geometries;
 namespace FlightTracking.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateUserAndPriorities : Migration
+    public partial class FlightTrackingApiMigra : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,7 +28,9 @@ namespace FlightTracking.Api.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     email = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    fone = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                    phone = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    push_token = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -62,9 +65,36 @@ namespace FlightTracking.Api.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "UserConnections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    user_id = table.Column<int>(type: "int", nullable: false),
+                    is_connected = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    last_updated = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserConnections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserConnections_Users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "Users",
+                        principalColumn: "uzer_id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerPriorities_user_id",
                 table: "CustomerPriorities",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserConnections_user_id",
+                table: "UserConnections",
                 column: "user_id");
         }
 
@@ -73,6 +103,9 @@ namespace FlightTracking.Api.Migrations
         {
             migrationBuilder.DropTable(
                 name: "CustomerPriorities");
+
+            migrationBuilder.DropTable(
+                name: "UserConnections");
 
             migrationBuilder.DropTable(
                 name: "Users");
